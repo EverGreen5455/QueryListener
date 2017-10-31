@@ -37,7 +37,7 @@ public class ChatMonitor {
                         System.out.print("Enter the number of minutes  = ");
                         String period = bufferedReader.readLine();
                         if (checkString(period)) {
-                            this.queryController.getQueryForThePeriod(Integer.parseInt(period));
+                            this.queryController.printQueryForThePeriod(Integer.parseInt(period));
                         } else {
                             log.error("Input Error!");
                         }

@@ -1,4 +1,7 @@
-#Tue Oct 17 03:32:41 MSK 2017
+#Tue Oct 31 02:04:27 MSK 2017
 FILE_SIZE=0
+PERIOD_BETWEEN_THREADS=3000
+NUMBER_OF_THREADS=10
 BLACK_LIST=information_schema.tables;select;mysql.func;information_schema.files;information_schema.columns;information_schema.key_column_usage;information_schema.partitions;mysql.user;mysql.db;mysql.tables_priv;mysql.columns_priv;performance_schema.events_statements_current;performance_schema.events_stages_history_long;performance_schema.events_waits_history_long;information_schema.events;
-LAST_SCHEMA=netcracker_test
+NUMBER_OF_LINES=4
+LAST_SCHEMA=netcrackerproject

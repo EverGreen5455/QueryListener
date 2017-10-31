@@ -6,6 +6,7 @@ import com.netcracker.service.QueryService;
 import com.netcracker.util.ConstantsProvider;
 import lombok.extern.apachecommons.CommonsLog;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Controller;
 
 import javax.annotation.PostConstruct;
@@ -32,6 +33,7 @@ public class QueryController {
     private List<String> queriesStatement;
     private List<String> blackList;
     private long fileSize = 0;
+    private long numberOfLines;
     private String schema = "";
 
     @Autowired
@@ -45,6 +47,7 @@ public class QueryController {
         queriesStatement = new ArrayList<>();
         properties.load(new FileInputStream(new File(ConstantsProvider.PROPERTIES_FILE_PATH_NAME)));
         fileSize = Long.parseLong(properties.getProperty("FILE_SIZE", "0"));
+        numberOfLines = Long.parseLong(properties.getProperty("NUMBER_OF_LINES"));
         schema = properties.getProperty("LAST_SCHEMA");
         Collections.addAll(blackList, properties.getProperty("BLACK_LIST").split(";"));
         queriesStatement.add("insert");
@@ -53,18 +56,19 @@ public class QueryController {
         queriesStatement.add("select");
     }
 
-    public void startListening() {
-        File file = new File(ConstantsProvider.FILE_PATH_NAME);
-        if (fileSize != file.length()) {
-            if (fileSize > file.length()) {
-                fileSize = 0;
+    public synchronized void startListening(ConfigurableApplicationContext applicationContext) {
+        if (applicationContext.isActive()) {
+            File file = new File(ConstantsProvider.FILE_PATH_NAME);
+            if (fileSize != file.length()) {
+                if (fileSize > file.length()) {
+                    fileSize = 0;
+                }
+                try {
+                    logParse();
+                } catch (IOException e) {
+                    log.error("An error has occurred. Error details: ", e);
+                }
             }
-            try {
-                logParse();
-            } catch (IOException e) {
-                log.error("An error has occurred. Error details: ", e);
-            }
-
         }
     }
 
@@ -136,8 +140,10 @@ public class QueryController {
         try (RandomAccessFile file = new RandomAccessFile(ConstantsProvider.FILE_PATH_NAME, "r")) {
             file.seek(fileSize);
             String s = null;
-            while ((s = file.readLine()) != null) {
-                list.add(s);
+            while (list.size() != numberOfLines) {
+                while (((s = file.readLine()) != null) && (list.size() < numberOfLines)) {
+                    list.add(s);
+                }
             }
             fileSize = file.getFilePointer();
             properties.setProperty("FILE_SIZE", String.valueOf(fileSize));
@@ -148,11 +154,11 @@ public class QueryController {
         return list;
     }
 
-    public void getQueryForThePeriod(long period) {
+    public void printQueryForThePeriod(long period) {
         List<Query> queryList = this.queryService.getQueryForThePeriod(LocalDateTime.now().minusMinutes(period));
         if (!queryList.isEmpty()) {
-            for (Query q : queryList) {
-                System.out.println(q);
+            for (Query query : queryList) {
+                System.out.println(query);
             }
         } else {
             System.out.println("No requests for this period were found!");
